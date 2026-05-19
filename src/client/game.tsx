@@ -6,7 +6,7 @@ import { MemeEditor } from './components/meme/MemeEditor';
 import { MemeViewer } from './components/meme/MemeViewer';
 import type { InitResponse } from '../shared/api';
 
-const App = () => {
+export const App = () => {
   const [initData, setInitData] = useState<InitResponse | null>(null);
 
   useEffect(() => {

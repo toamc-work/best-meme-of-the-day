@@ -29,6 +29,7 @@ export const useMemeEditor = () => {
   });
 
   const stateRef = useRef(state);
+  // eslint-disable-next-line react-hooks/refs
   stateRef.current = state;
 
   useEffect(() => {
