@@ -49,8 +49,8 @@ api.get('/init', async (c) => {
 api.post('/post-meme', async (c) => {
   const { postId, subredditName } = context;
 
-  if (!postId) {
-    return c.json<ErrorResponse>({ status: 'error', message: 'postId is required' }, 400);
+  if (!postId || !subredditName) {
+    return c.json<ErrorResponse>({ status: 'error', message: 'context missing postId or subredditName' }, 400);
   }
 
   try {

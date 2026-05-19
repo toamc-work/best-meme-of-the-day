@@ -85,7 +85,10 @@ export const useMemeEditor = () => {
       layers: prev.layers.map((l) =>
         l.id === id ? { ...l, locked: !l.locked } : l
       ),
-      selectedLayerId: prev.selectedLayerId === id ? null : prev.selectedLayerId,
+      selectedLayerId:
+        prev.selectedLayerId === id && !prev.layers.find((l) => l.id === id)?.locked
+          ? null
+          : prev.selectedLayerId,
     }));
   }, []);
 
