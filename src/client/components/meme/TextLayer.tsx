@@ -48,7 +48,7 @@ export const TextLayer = ({ layer, isSelected, onSelect, onUpdate }: Props) => {
     };
 
     window.addEventListener('mousemove', move);
-    window.addEventListener('touchmove', move, { passive: true });
+    window.addEventListener('touchmove', move);
     window.addEventListener('mouseup', end);
     window.addEventListener('touchend', end);
   };

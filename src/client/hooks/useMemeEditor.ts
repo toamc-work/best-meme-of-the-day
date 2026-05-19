@@ -120,6 +120,7 @@ export const useMemeEditor = () => {
           const scaledSize = layer.fontSize * (img.naturalWidth / 500);
           ctx.font = `bold ${scaledSize}px Impact, Arial`;
           ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
           ctx.shadowColor = 'rgba(0,0,0,0.8)';
           ctx.shadowBlur = 4;
           ctx.strokeStyle = 'black';
