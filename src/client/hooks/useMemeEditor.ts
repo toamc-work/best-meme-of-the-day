@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { navigateTo, showToast } from '@devvit/web/client';
 import type { PostMemeRequest, PostMemeResponse } from '../../shared/api';
 
@@ -27,6 +27,17 @@ export const useMemeEditor = () => {
     selectedLayerId: null,
     submitting: false,
   });
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  useEffect(() => {
+    return () => {
+      if (stateRef.current.imageUrl) {
+        URL.revokeObjectURL(stateRef.current.imageUrl);
+      }
+    };
+  }, []);
 
   const setImage = useCallback((file: File) => {
     const url = URL.createObjectURL(file);
@@ -83,7 +94,8 @@ export const useMemeEditor = () => {
 
   const exportAndSubmit = useCallback(
     async (title: string) => {
-      const { imageUrl, layers } = state;
+      if (stateRef.current.submitting) return;
+      const { imageUrl, layers } = stateRef.current;
       if (!imageUrl) return;
 
       setState((prev) => ({ ...prev, submitting: true }));
@@ -137,7 +149,7 @@ export const useMemeEditor = () => {
         setState((prev) => ({ ...prev, submitting: false }));
       }
     },
-    [state]
+    []
   );
 
   return {
