@@ -63,14 +63,18 @@ export const Splash = () => {
     if (initData.contentType === 'video') {
       return (
         <div className="relative w-full h-screen overflow-hidden bg-[#0e0e0e] flex items-center justify-center">
-          {/* thumbnail fills the screen exactly like an image post */}
+          {/* video fills the screen like an image post — no autoplay/controls, first frame acts as poster */}
           <div
             className="absolute inset-0 flex items-center justify-center cursor-pointer"
             onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}
           >
-            {initData.thumbnailData ? (
-              <img src={initData.thumbnailData} alt={initData.title} className="w-full h-full object-contain" />
-            ) : null}
+            <video
+              src={initData.videoData}
+              muted
+              playsInline
+              preload="metadata"
+              className="w-full h-full object-contain"
+            />
           </div>
 
           {/* subtle video badge */}
