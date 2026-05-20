@@ -3,21 +3,31 @@ import './index.css';
 import { requestExpandedMode } from '@devvit/web/client';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PlayCircle } from 'lucide-react';
+import { Heart, ThumbsDown, Play, Flame } from 'lucide-react';
 import { MemeViewer } from './components/meme/MemeViewer';
-import { VideoViewer } from './components/meme/VideoViewer';
 import type { InitResponse } from '../shared/api';
 
 export const Splash = () => {
   const [initData, setInitData] = useState<InitResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [dislikes, setDislikes] = useState(0);
+  const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null);
+  const [voting, setVoting] = useState(false);
 
   useEffect(() => {
     void (async () => {
       try {
         const res = await fetch('/api/init');
-        if (res.ok) setInitData(await (res.json() as Promise<InitResponse>));
+        if (res.ok) {
+          const data = await (res.json() as Promise<InitResponse>);
+          setInitData(data);
+          if (data.mode === 'viewer') {
+            setLikes(data.likes);
+            setDislikes(data.dislikes);
+            setUserVote(data.userVote);
+          }
+        }
       } catch {
         // fall through to editor CTA
       } finally {
@@ -30,39 +40,65 @@ export const Splash = () => {
     return <div className="w-full h-screen bg-[#0e0e0e]" />;
   }
 
+  const handleVote = async (action: 'like' | 'dislike') => {
+    if (voting) return;
+    const prev = { likes, dislikes, userVote };
+    const toggling = userVote === action;
+    const wasOpposite = userVote !== null && userVote !== action;
+    setUserVote(toggling ? null : action);
+    setLikes((l) => { if (action === 'like') return toggling ? l - 1 : l + 1; if (wasOpposite) return l - 1; return l; });
+    setDislikes((d) => { if (action === 'dislike') return toggling ? d - 1 : d + 1; if (wasOpposite) return d - 1; return d; });
+    setVoting(true);
+    try {
+      const res = await fetch('/api/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+      if (!res.ok) throw new Error();
+      const data = await res.json() as { likes: number; dislikes: number; userVote: 'like' | 'dislike' | null };
+      setLikes(data.likes); setDislikes(data.dislikes); setUserVote(data.userVote);
+    } catch {
+      setLikes(prev.likes); setDislikes(prev.dislikes); setUserVote(prev.userVote);
+    } finally { setVoting(false); }
+  };
+
   if (initData?.mode === 'viewer') {
     if (initData.contentType === 'video') {
-      if (videoPlaying) {
-        return (
-          <VideoViewer
-            videoData={initData.videoData}
-            autoPlay
-            initialLikes={initData.likes}
-            initialDislikes={initData.dislikes}
-            initialUserVote={initData.userVote}
-          />
-        );
-      }
-
-      // Show thumbnail (or dark bg if no thumbnail) with a centered play button
       return (
-        <div
-          className="relative w-full h-screen overflow-hidden bg-[#0e0e0e] flex items-center justify-center cursor-pointer"
-          onClick={() => setVideoPlaying(true)}
-        >
-          {initData.thumbnailData ? (
-            <img
-              src={initData.thumbnailData}
-              alt={initData.title}
-              className="w-full h-full object-contain"
-            />
-          ) : null}
+        <div className="relative w-full h-screen overflow-hidden bg-[#0e0e0e] flex items-center justify-center">
+          {/* thumbnail fills the screen exactly like an image post */}
+          <div
+            className="absolute inset-0 flex items-center justify-center cursor-pointer"
+            onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}
+          >
+            {initData.thumbnailData ? (
+              <img src={initData.thumbnailData} alt={initData.title} className="w-full h-full object-contain" />
+            ) : null}
+          </div>
 
-          {/* gradient overlay so the play icon is always readable */}
-          <div className="absolute inset-0 bg-black/30" />
+          {/* subtle video badge */}
+          <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded-full pointer-events-none">
+            <Play className="w-3 h-3 fill-white" />
+            Video
+          </div>
 
-          <div className="absolute inset-0 flex items-center justify-center">
-            <PlayCircle className="w-16 h-16 text-white drop-shadow-lg" strokeWidth={1.5} />
+          {/* bottom gradient + controls — identical to MemeViewer */}
+          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+          <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
+            <div className="flex items-center gap-4">
+              <button className="flex items-center gap-1.5 text-white" onClick={() => void handleVote('like')} aria-label="Like">
+                <Heart className="w-6 h-6 transition-colors" style={{ color: userVote === 'like' ? '#d93900' : 'white', fill: userVote === 'like' ? '#d93900' : 'none' }} />
+                <span className="text-sm font-semibold tabular-nums">{likes}</span>
+              </button>
+              <button className="flex items-center gap-1.5 text-white" onClick={() => void handleVote('dislike')} aria-label="Dislike">
+                <ThumbsDown className="w-5 h-5 transition-colors" style={{ color: userVote === 'dislike' ? '#888' : 'white' }} />
+                <span className="text-sm font-semibold tabular-nums">{dislikes}</span>
+              </button>
+            </div>
+            <button
+              className="flex items-center gap-1.5 bg-[#d93900] hover:bg-[#c23300] text-white text-sm font-bold px-4 py-1.5 rounded-full transition-colors"
+              onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}
+            >
+              <Flame className="w-4 h-4" />
+              Create Yours
+            </button>
           </div>
         </div>
       );

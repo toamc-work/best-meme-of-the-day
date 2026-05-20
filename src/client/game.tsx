@@ -35,6 +35,7 @@ export const App = () => {
       return (
         <VideoViewer
           videoData={initData.videoData}
+          autoPlay
           initialLikes={initData.likes}
           initialDislikes={initData.dislikes}
           initialUserVote={initData.userVote}
