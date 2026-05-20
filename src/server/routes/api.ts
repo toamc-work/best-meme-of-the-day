@@ -16,7 +16,7 @@ type ErrorResponse = {
   message: string;
 };
 
-type VideoRecord = { data: string; title: string };
+type VideoRecord = { data: string; title: string; thumbnail: string | null };
 
 async function getVoteCounts(
   postId: string,
@@ -68,7 +68,7 @@ api.get('/init', async (c) => {
 
     const videoRaw = await redis.get(`video:${postId}`);
     if (videoRaw) {
-      const { data: videoData, title } = JSON.parse(videoRaw) as VideoRecord;
+      const { data: videoData, title, thumbnail: thumbnailData } = JSON.parse(videoRaw) as VideoRecord;
       const votes = await getVoteCounts(postId, resolvedUsername);
       return c.json<InitResponse>({
         type: 'init',
@@ -77,6 +77,7 @@ api.get('/init', async (c) => {
         mode: 'viewer',
         contentType: 'video',
         videoData,
+        thumbnailData: thumbnailData ?? null,
         title,
         ...votes,
       });
@@ -124,9 +125,9 @@ api.post('/post-video', async (c) => {
   }
 
   try {
-    const { videoData, title } = await c.req.json<PostVideoRequest>();
+    const { videoData, thumbnailData, title } = await c.req.json<PostVideoRequest>();
     const newPost = await reddit.submitCustomPost({ title });
-    const record: VideoRecord = { data: videoData, title };
+    const record: VideoRecord = { data: videoData, title, thumbnail: thumbnailData };
     await redis.set(`video:${newPost.id}`, JSON.stringify(record));
 
     return c.json<PostVideoResponse>({

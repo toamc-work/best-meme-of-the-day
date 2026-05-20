@@ -3,6 +3,40 @@ import { X } from 'lucide-react';
 import { navigateTo } from '@devvit/web/client';
 import { VideoUpload } from './VideoUpload';
 import { Button } from '@/components/ui/button';
+import type { PostVideoRequest } from '../../../shared/api';
+
+function captureFirstFrame(objectUrl: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve(null), 6000);
+
+    const video = document.createElement('video');
+    video.src = objectUrl;
+    video.muted = true;
+    video.preload = 'metadata';
+
+    video.addEventListener('loadeddata', () => {
+      clearTimeout(timeout);
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 360;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
+      } catch {
+        resolve(null);
+      }
+    }, { once: true });
+
+    video.addEventListener('error', () => {
+      clearTimeout(timeout);
+      resolve(null);
+    }, { once: true });
+
+    video.load();
+  });
+}
 
 export const VideoEditor = () => {
   const [title, setTitle] = useState('');
@@ -10,13 +44,19 @@ export const VideoEditor = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const objectUrlRef = useRef<string | null>(null);
+  const thumbnailRef = useRef<string | null>(null);
 
-  const setVideo = (file: File) => {
+  const handleVideoSelected = (file: File) => {
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     const url = URL.createObjectURL(file);
     objectUrlRef.current = url;
     setVideoFile(file);
     setVideoUrl(url);
+    thumbnailRef.current = null;
+    // capture first frame in the background; store for use at post time
+    void captureFirstFrame(url).then((thumb) => {
+      thumbnailRef.current = thumb;
+    });
   };
 
   const clearVideo = () => {
@@ -26,6 +66,7 @@ export const VideoEditor = () => {
     }
     setVideoFile(null);
     setVideoUrl(null);
+    thumbnailRef.current = null;
   };
 
   useEffect(() => {
@@ -46,10 +87,16 @@ export const VideoEditor = () => {
         reader.readAsDataURL(videoFile);
       });
 
+      const body: PostVideoRequest = {
+        videoData,
+        thumbnailData: thumbnailRef.current,
+        title: title.trim(),
+      };
+
       const res = await fetch('/api/post-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoData, title: title.trim() }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -64,7 +111,7 @@ export const VideoEditor = () => {
   if (!videoUrl) {
     return (
       <div className="min-h-screen bg-[#0e0e0e] flex items-center justify-center p-4">
-        <VideoUpload onVideoSelected={setVideo} />
+        <VideoUpload onVideoSelected={handleVideoSelected} />
       </div>
     );
   }

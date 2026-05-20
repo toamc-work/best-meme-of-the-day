@@ -16,6 +16,7 @@ export type InitResponse = {
       mode: 'viewer';
       contentType: 'video';
       videoData: string;
+      thumbnailData: string | null;
       title: string;
       likes: number;
       dislikes: number;
@@ -35,6 +36,7 @@ export type PostMemeResponse = {
 
 export type PostVideoRequest = {
   videoData: string;
+  thumbnailData: string | null;
   title: string;
 };
 

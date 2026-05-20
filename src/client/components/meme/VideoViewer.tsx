@@ -4,6 +4,7 @@ import { navigateTo } from '@devvit/web/client';
 
 type Props = {
   videoData: string;
+  autoPlay?: boolean;
   initialLikes: number;
   initialDislikes: number;
   initialUserVote: 'like' | 'dislike' | null;
@@ -11,6 +12,7 @@ type Props = {
 
 export const VideoViewer = ({
   videoData,
+  autoPlay = false,
   initialLikes,
   initialDislikes,
   initialUserVote,
@@ -82,6 +84,7 @@ export const VideoViewer = ({
       <video
         src={videoData}
         controls
+        autoPlay={autoPlay}
         className="w-full h-full object-contain"
       />
 

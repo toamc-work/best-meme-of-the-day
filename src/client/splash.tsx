@@ -3,12 +3,15 @@ import './index.css';
 import { requestExpandedMode } from '@devvit/web/client';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { PlayCircle } from 'lucide-react';
 import { MemeViewer } from './components/meme/MemeViewer';
+import { VideoViewer } from './components/meme/VideoViewer';
 import type { InitResponse } from '../shared/api';
 
 export const Splash = () => {
   const [initData, setInitData] = useState<InitResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -29,15 +32,38 @@ export const Splash = () => {
 
   if (initData?.mode === 'viewer') {
     if (initData.contentType === 'video') {
+      if (videoPlaying) {
+        return (
+          <VideoViewer
+            videoData={initData.videoData}
+            autoPlay
+            initialLikes={initData.likes}
+            initialDislikes={initData.dislikes}
+            initialUserVote={initData.userVote}
+          />
+        );
+      }
+
+      // Show thumbnail (or dark bg if no thumbnail) with a centered play button
       return (
-        <div className="w-full h-screen overflow-hidden bg-[#0e0e0e] flex flex-col items-center justify-center gap-4">
-          <p className="text-white font-bold text-lg px-4 text-center">{initData.title}</p>
-          <button
-            className="bg-[#d93900] hover:bg-[#c23300] text-white rounded-full px-6 py-2.5 font-bold text-sm transition-colors"
-            onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}
-          >
-            ▶ Watch Video
-          </button>
+        <div
+          className="relative w-full h-screen overflow-hidden bg-[#0e0e0e] flex items-center justify-center cursor-pointer"
+          onClick={() => setVideoPlaying(true)}
+        >
+          {initData.thumbnailData ? (
+            <img
+              src={initData.thumbnailData}
+              alt={initData.title}
+              className="w-full h-full object-contain"
+            />
+          ) : null}
+
+          {/* gradient overlay so the play icon is always readable */}
+          <div className="absolute inset-0 bg-black/30" />
+
+          <div className="absolute inset-0 flex items-center justify-center">
+            <PlayCircle className="w-16 h-16 text-white drop-shadow-lg" strokeWidth={1.5} />
+          </div>
         </div>
       );
     }
