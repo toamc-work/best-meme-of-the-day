@@ -80,9 +80,8 @@ export const MemeViewer = ({ imageData, initialLikes, initialDislikes, initialUs
       {/* bottom gradient + controls */}
       <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
 
-      <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
-        {/* vote buttons */}
-        <div className="flex items-center gap-4">
+      <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-3 pointer-events-auto">
+        <div className="flex items-center gap-3">
           <button
             className="flex items-center gap-1.5 text-white"
             onClick={() => void handleVote('like')}
@@ -108,13 +107,12 @@ export const MemeViewer = ({ imageData, initialLikes, initialDislikes, initialUs
           </button>
         </div>
 
-        {/* create your own */}
         <button
-          className="flex items-center gap-1.5 bg-[#d93900] hover:bg-[#c23300] text-white text-sm font-bold px-4 py-1.5 rounded-full transition-colors disabled:opacity-60"
+          className="flex items-center gap-1 bg-[#d93900] hover:bg-[#c23300] text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors disabled:opacity-60 shrink-0"
           disabled={creating}
           onClick={() => void handleCreateOwn()}
         >
-          <Flame className="w-4 h-4" />
+          <Flame className="w-3.5 h-3.5" />
           {creating ? 'Creating...' : 'Create Yours'}
         </button>
       </div>

@@ -1,5 +1,6 @@
 export const MAX_VIDEO_FILE_MB = 10;
 export const MAX_IMAGE_FILE_MB = 10;
+export const MAX_GIF_FILE_MB = 10;
 
 export type InitResponse = {
   type: 'init';
@@ -25,6 +26,15 @@ export type InitResponse = {
       dislikes: number;
       userVote: 'like' | 'dislike' | null;
     }
+  | {
+      mode: 'viewer';
+      contentType: 'gif';
+      gifData: string;
+      title: string;
+      likes: number;
+      dislikes: number;
+      userVote: 'like' | 'dislike' | null;
+    }
 );
 
 export type PostMemeRequest = {
@@ -45,6 +55,16 @@ export type PostVideoRequest = {
 
 export type PostVideoResponse = {
   type: 'post-video';
+  postUrl: string;
+};
+
+export type PostGifRequest = {
+  gifData: string;
+  title: string;
+};
+
+export type PostGifResponse = {
+  type: 'post-gif';
   postUrl: string;
 };
 

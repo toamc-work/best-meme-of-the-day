@@ -6,6 +6,8 @@ import type {
   PostMemeResponse,
   PostVideoRequest,
   PostVideoResponse,
+  PostGifRequest,
+  PostGifResponse,
   VoteRequest,
   VoteResponse,
   CreateMemePostResponse,
@@ -17,6 +19,7 @@ type ErrorResponse = {
 };
 
 type VideoRecord = { data: string; title: string; thumbnail: string | null };
+type GifRecord = { data: string; title: string };
 
 async function getVoteCounts(
   postId: string,
@@ -83,6 +86,22 @@ api.get('/init', async (c) => {
       });
     }
 
+    const gifRaw = await redis.get(`gif:${postId}`);
+    if (gifRaw) {
+      const { data: gifData, title } = JSON.parse(gifRaw) as GifRecord;
+      const votes = await getVoteCounts(postId, resolvedUsername);
+      return c.json<InitResponse>({
+        type: 'init',
+        postId,
+        username: resolvedUsername,
+        mode: 'viewer',
+        contentType: 'gif',
+        gifData,
+        title,
+        ...votes,
+      });
+    }
+
     return c.json<InitResponse>({
       type: 'init',
       postId,
@@ -132,6 +151,29 @@ api.post('/post-video', async (c) => {
 
     return c.json<PostVideoResponse>({
       type: 'post-video',
+      postUrl: `https://reddit.com/r/${subredditName}/comments/${newPost.id}`,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json<ErrorResponse>({ status: 'error', message }, 400);
+  }
+});
+
+api.post('/post-gif', async (c) => {
+  const { postId, subredditName } = context;
+
+  if (!postId || !subredditName) {
+    return c.json<ErrorResponse>({ status: 'error', message: 'context missing postId or subredditName' }, 400);
+  }
+
+  try {
+    const { gifData, title } = await c.req.json<PostGifRequest>();
+    const newPost = await reddit.submitCustomPost({ title });
+    const record: GifRecord = { data: gifData, title };
+    await redis.set(`gif:${newPost.id}`, JSON.stringify(record));
+
+    return c.json<PostGifResponse>({
+      type: 'post-gif',
       postUrl: `https://reddit.com/r/${subredditName}/comments/${newPost.id}`,
     });
   } catch (error) {

@@ -6,12 +6,14 @@ import { MemeEditor } from './components/meme/MemeEditor';
 import { MemeViewer } from './components/meme/MemeViewer';
 import { VideoEditor } from './components/meme/VideoEditor';
 import { VideoViewer } from './components/meme/VideoViewer';
+import { GifEditor } from './components/meme/GifEditor';
+import { GifViewer } from './components/meme/GifViewer';
 import { ContentTypePicker } from './components/meme/ContentTypePicker';
 import type { InitResponse } from '../shared/api';
 
 export const App = () => {
   const [initData, setInitData] = useState<InitResponse | null>(null);
-  const [contentType, setContentType] = useState<'image' | 'video' | null>(null);
+  const [contentType, setContentType] = useState<'image' | 'video' | 'gif' | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -42,6 +44,16 @@ export const App = () => {
         />
       );
     }
+    if (initData.contentType === 'gif') {
+      return (
+        <GifViewer
+          gifData={initData.gifData}
+          initialLikes={initData.likes}
+          initialDislikes={initData.dislikes}
+          initialUserVote={initData.userVote}
+        />
+      );
+    }
     return (
       <MemeViewer
         imageData={initData.imageData}
@@ -54,6 +66,7 @@ export const App = () => {
 
   if (!contentType) return <ContentTypePicker onSelect={setContentType} />;
   if (contentType === 'video') return <VideoEditor />;
+  if (contentType === 'gif') return <GifEditor />;
   return <MemeEditor />;
 };
 

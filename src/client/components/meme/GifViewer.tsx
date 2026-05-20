@@ -1,28 +1,20 @@
 import { useState } from 'react';
-import { Heart, HeartCrack, Flame, Volume2, VolumeX } from 'lucide-react';
+import { Heart, HeartCrack, Flame } from 'lucide-react';
 import { navigateTo } from '@devvit/web/client';
 
 type Props = {
-  videoData: string;
-  autoPlay?: boolean;
+  gifData: string;
   initialLikes: number;
   initialDislikes: number;
   initialUserVote: 'like' | 'dislike' | null;
 };
 
-export const VideoViewer = ({
-  videoData,
-  autoPlay = false,
-  initialLikes,
-  initialDislikes,
-  initialUserVote,
-}: Props) => {
+export const GifViewer = ({ gifData, initialLikes, initialDislikes, initialUserVote }: Props) => {
   const [likes, setLikes] = useState(initialLikes);
   const [dislikes, setDislikes] = useState(initialDislikes);
   const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(initialUserVote);
   const [voting, setVoting] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [muted, setMuted] = useState(true);
 
   const handleVote = async (action: 'like' | 'dislike') => {
     if (voting) return;
@@ -81,28 +73,12 @@ export const VideoViewer = ({
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[#0e0e0e] flex flex-col items-center justify-center">
-      <video
-        src={videoData}
-        autoPlay={autoPlay}
-        muted={muted}
-        playsInline
-        className="w-full h-full object-contain"
-      />
+    <div className="relative w-full h-screen overflow-hidden bg-[#0e0e0e] flex items-center justify-center">
+      <img src={gifData} alt="Meme GIF" className="w-full h-full object-contain" />
 
-      {/* Instagram-style mute toggle — top-right corner */}
-      <button
-        className="absolute top-4 right-4 flex items-center justify-center w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white pointer-events-auto"
-        onClick={() => setMuted((m) => !m)}
-        aria-label={muted ? 'Unmute' : 'Mute'}
-      >
-        {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-      </button>
+      <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
 
-      {/* bottom gradient + controls */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
-
-      <div className="absolute bottom-14 left-0 right-0 flex items-center justify-between px-3 pointer-events-auto">
+      <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-3 pointer-events-auto">
         <div className="flex items-center gap-3">
           <button
             className="flex items-center gap-1.5 text-white"
