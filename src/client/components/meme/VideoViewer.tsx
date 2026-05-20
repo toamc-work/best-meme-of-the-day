@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, ThumbsDown, Flame } from 'lucide-react';
+import { Heart, HeartCrack, Flame, Volume2, VolumeX } from 'lucide-react';
 import { navigateTo } from '@devvit/web/client';
 
 type Props = {
@@ -22,6 +22,7 @@ export const VideoViewer = ({
   const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(initialUserVote);
   const [voting, setVoting] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [muted, setMuted] = useState(true);
 
   const handleVote = async (action: 'like' | 'dislike') => {
     if (voting) return;
@@ -83,15 +84,25 @@ export const VideoViewer = ({
     <div className="relative w-full h-screen overflow-hidden bg-[#0e0e0e] flex flex-col items-center justify-center">
       <video
         src={videoData}
-        controls
         autoPlay={autoPlay}
+        muted={muted}
+        playsInline
         className="w-full h-full object-contain"
       />
 
-      {/* top gradient + controls — keeps the bottom area free for native video controls */}
-      <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+      {/* Instagram-style mute toggle — top-right corner */}
+      <button
+        className="absolute top-4 right-4 flex items-center justify-center w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white pointer-events-auto"
+        onClick={() => setMuted((m) => !m)}
+        aria-label={muted ? 'Unmute' : 'Mute'}
+      >
+        {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+      </button>
 
-      <div className="absolute top-3 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
+      {/* bottom gradient + controls */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+
+      <div className="absolute bottom-14 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
         <div className="flex items-center gap-4">
           <button
             className="flex items-center gap-1.5 text-white"
@@ -113,8 +124,8 @@ export const VideoViewer = ({
             onClick={() => void handleVote('dislike')}
             aria-label="Dislike"
           >
-            <ThumbsDown
-              className="w-5 h-5 transition-colors"
+            <HeartCrack
+              className="w-6 h-6 transition-colors"
               style={{ color: userVote === 'dislike' ? '#888' : 'white' }}
             />
             <span className="text-sm font-semibold tabular-nums">{dislikes}</span>

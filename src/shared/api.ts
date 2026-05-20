@@ -1,3 +1,6 @@
+export const MAX_VIDEO_FILE_MB = 10;
+export const MAX_IMAGE_FILE_MB = 10;
+
 export type InitResponse = {
   type: 'init';
   postId: string;

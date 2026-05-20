@@ -3,7 +3,7 @@ import './index.css';
 import { requestExpandedMode } from '@devvit/web/client';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Heart, ThumbsDown, Flame } from 'lucide-react';
+import { Heart, HeartCrack, Flame, Play } from 'lucide-react';
 import { MemeViewer } from './components/meme/MemeViewer';
 import type { InitResponse } from '../shared/api';
 
@@ -46,17 +46,39 @@ export const Splash = () => {
     const toggling = userVote === action;
     const wasOpposite = userVote !== null && userVote !== action;
     setUserVote(toggling ? null : action);
-    setLikes((l) => { if (action === 'like') return toggling ? l - 1 : l + 1; if (wasOpposite) return l - 1; return l; });
-    setDislikes((d) => { if (action === 'dislike') return toggling ? d - 1 : d + 1; if (wasOpposite) return d - 1; return d; });
+    setLikes((l) => {
+      if (action === 'like') return toggling ? l - 1 : l + 1;
+      if (wasOpposite) return l - 1;
+      return l;
+    });
+    setDislikes((d) => {
+      if (action === 'dislike') return toggling ? d - 1 : d + 1;
+      if (wasOpposite) return d - 1;
+      return d;
+    });
     setVoting(true);
     try {
-      const res = await fetch('/api/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+      const res = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
       if (!res.ok) throw new Error();
-      const data = await res.json() as { likes: number; dislikes: number; userVote: 'like' | 'dislike' | null };
-      setLikes(data.likes); setDislikes(data.dislikes); setUserVote(data.userVote);
+      const data = (await res.json()) as {
+        likes: number;
+        dislikes: number;
+        userVote: 'like' | 'dislike' | null;
+      };
+      setLikes(data.likes);
+      setDislikes(data.dislikes);
+      setUserVote(data.userVote);
     } catch {
-      setLikes(prev.likes); setDislikes(prev.dislikes); setUserVote(prev.userVote);
-    } finally { setVoting(false); }
+      setLikes(prev.likes);
+      setDislikes(prev.dislikes);
+      setUserVote(prev.userVote);
+    } finally {
+      setVoting(false);
+    }
   };
 
   if (initData?.mode === 'viewer') {
@@ -75,21 +97,51 @@ export const Splash = () => {
               preload="metadata"
               className="w-full h-full object-contain"
             />
+            {/* video indicator — centered play button */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm">
+                <Play className="w-7 h-7 text-white fill-white ml-1" />
+              </div>
+            </div>
           </div>
 
-          {/* top gradient + controls */}
-          <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
-          <div className="absolute top-3 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
+          {/* bottom gradient + controls */}
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+
+          <div className="absolute bottom-3 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-1.5 text-white" onClick={() => void handleVote('like')} aria-label="Like">
-                <Heart className="w-6 h-6 transition-colors" style={{ color: userVote === 'like' ? '#d93900' : 'white', fill: userVote === 'like' ? '#d93900' : 'none' }} />
-                <span className="text-sm font-semibold tabular-nums">{likes}</span>
+              <button
+                className="flex items-center gap-1.5 text-white"
+                onClick={() => void handleVote('like')}
+                aria-label="Like"
+              >
+                <Heart
+                  className="w-6 h-6 transition-colors"
+                  style={{
+                    color: userVote === 'like' ? '#d93900' : 'white',
+                    fill: userVote === 'like' ? '#d93900' : 'none',
+                  }}
+                />
+                <span className="text-sm font-semibold tabular-nums">
+                  {likes}
+                </span>
               </button>
-              <button className="flex items-center gap-1.5 text-white" onClick={() => void handleVote('dislike')} aria-label="Dislike">
-                <ThumbsDown className="w-5 h-5 transition-colors" style={{ color: userVote === 'dislike' ? '#888' : 'white' }} />
-                <span className="text-sm font-semibold tabular-nums">{dislikes}</span>
+
+              <button
+                className="flex items-center gap-1.5 text-white"
+                onClick={() => void handleVote('dislike')}
+                aria-label="Dislike"
+              >
+                <HeartCrack
+                  className="w-6 h-6 transition-colors"
+                  style={{ color: userVote === 'dislike' ? '#888' : 'white' }}
+                />
+                <span className="text-sm font-semibold tabular-nums">
+                  {dislikes}
+                </span>
               </button>
             </div>
+
             <button
               className="flex items-center gap-1.5 bg-[#d93900] hover:bg-[#c23300] text-white text-sm font-bold px-4 py-1.5 rounded-full transition-colors"
               onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}

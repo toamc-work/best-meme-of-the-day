@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { navigateTo, showToast } from '@devvit/web/client';
 import type { PostMemeRequest, PostMemeResponse } from '../../shared/api';
+import { MAX_IMAGE_FILE_MB } from '../../shared/api';
 
 export type TextLayerData = {
   id: string;
@@ -145,6 +146,12 @@ export const useMemeEditor = () => {
 
         const imageData = canvas.toDataURL('image/png');
 
+        // base64 is ~4/3 of raw; compare against the same MB limit
+        if (imageData.length > MAX_IMAGE_FILE_MB * 1024 * 1024 * (4 / 3)) {
+          showToast(`Image is too large. Max size is ${MAX_IMAGE_FILE_MB} MB.`);
+          return;
+        }
+
         const res = await fetch('/api/post-meme', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -155,8 +162,8 @@ export const useMemeEditor = () => {
         const data: PostMemeResponse = await res.json();
         navigateTo(data.postUrl);
       } catch (err) {
-        console.error('Failed to post meme', err);
-        showToast('Failed to post meme');
+        const is500 = err instanceof Error && err.message.includes('500');
+        showToast(is500 ? 'Image is too large to upload. Try a smaller file.' : 'Failed to post — please try again.');
       } finally {
         setState((prev) => ({ ...prev, submitting: false }));
       }

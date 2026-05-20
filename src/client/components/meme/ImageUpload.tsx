@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { CloudUpload } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MAX_IMAGE_FILE_MB } from '../../../shared/api';
 
 type Props = {
   onImageSelected: (file: File) => void;
@@ -9,9 +10,15 @@ type Props = {
 export const ImageUpload = ({ onImageSelected }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [sizeError, setSizeError] = useState<string | null>(null);
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith('image/')) return;
+    if (file.size > MAX_IMAGE_FILE_MB * 1024 * 1024) {
+      setSizeError(`Image is too large. Max size is ${MAX_IMAGE_FILE_MB} MB.`);
+      return;
+    }
+    setSizeError(null);
     onImageSelected(file);
   };
 
@@ -64,6 +71,9 @@ export const ImageUpload = ({ onImageSelected }: Props) => {
         </div>
       </div>
 
+      {sizeError && (
+        <p className="text-red-400 text-sm font-medium">{sizeError}</p>
+      )}
       <p className="text-gray-500 text-sm mt-1">🔥 No boring memes. Only heat.</p>
 
       <input

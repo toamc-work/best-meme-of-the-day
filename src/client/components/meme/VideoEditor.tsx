@@ -4,6 +4,7 @@ import { navigateTo } from '@devvit/web/client';
 import { VideoUpload } from './VideoUpload';
 import { Button } from '@/components/ui/button';
 import type { PostVideoRequest } from '../../../shared/api';
+import { MAX_VIDEO_FILE_MB } from '../../../shared/api';
 
 function captureFirstFrame(objectUrl: string): Promise<string | null> {
   return new Promise((resolve) => {
@@ -43,6 +44,7 @@ export const VideoEditor = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const thumbnailRef = useRef<string | null>(null);
 
@@ -77,7 +79,13 @@ export const VideoEditor = () => {
 
   const handlePost = async () => {
     if (!videoFile || !title.trim() || submitting) return;
+    if (videoFile.size > MAX_VIDEO_FILE_MB * 1024 * 1024) {
+      setError(`Video is too large. Max size is ${MAX_VIDEO_FILE_MB} MB.`);
+      return;
+    }
+
     setSubmitting(true);
+    setError(null);
 
     try {
       const videoData = await new Promise<string>((resolve, reject) => {
@@ -103,7 +111,8 @@ export const VideoEditor = () => {
       const data = await res.json() as { postUrl: string };
       navigateTo(data.postUrl);
     } catch (err) {
-      console.error('Failed to post video', err);
+      const is500 = err instanceof Error && err.message.includes('500');
+      setError(is500 ? 'Video is too large to upload. Try a shorter or lower-quality clip.' : 'Failed to post — please try again.');
       setSubmitting(false);
     }
   };
@@ -132,6 +141,10 @@ export const VideoEditor = () => {
           className="w-full bg-black"
           style={{ maxHeight: '60vh' }}
         />
+
+        {error && (
+          <p className="text-red-400 text-sm font-medium px-4 py-2 border-t border-gray-700">{error}</p>
+        )}
 
         <div className="flex items-center justify-between px-3 py-2 border-t border-gray-700 min-h-[44px]">
           <button
