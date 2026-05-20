@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { context, redis, reddit } from '@devvit/web/server';
+import { storePostMeta } from '../lib/competition';
 import type {
   InitResponse,
   PostMemeRequest,
@@ -123,8 +124,14 @@ api.post('/post-meme', async (c) => {
 
   try {
     const { imageData, title } = await c.req.json<PostMemeRequest>();
-    const newPost = await reddit.submitCustomPost({ title });
-    await redis.set(`meme:${newPost.id}`, imageData);
+    const [newPost, authorUsername] = await Promise.all([
+      reddit.submitCustomPost({ title }),
+      reddit.getCurrentUsername(),
+    ]);
+    await Promise.all([
+      redis.set(`meme:${newPost.id}`, imageData),
+      storePostMeta(newPost.id, authorUsername ?? 'anonymous', title, 'image'),
+    ]);
 
     return c.json<PostMemeResponse>({
       type: 'post-meme',
@@ -145,9 +152,15 @@ api.post('/post-video', async (c) => {
 
   try {
     const { videoData, thumbnailData, title } = await c.req.json<PostVideoRequest>();
-    const newPost = await reddit.submitCustomPost({ title });
+    const [newPost, authorUsername] = await Promise.all([
+      reddit.submitCustomPost({ title }),
+      reddit.getCurrentUsername(),
+    ]);
     const record: VideoRecord = { data: videoData, title, thumbnail: thumbnailData };
-    await redis.set(`video:${newPost.id}`, JSON.stringify(record));
+    await Promise.all([
+      redis.set(`video:${newPost.id}`, JSON.stringify(record)),
+      storePostMeta(newPost.id, authorUsername ?? 'anonymous', title, 'video'),
+    ]);
 
     return c.json<PostVideoResponse>({
       type: 'post-video',
@@ -168,9 +181,15 @@ api.post('/post-gif', async (c) => {
 
   try {
     const { gifData, title } = await c.req.json<PostGifRequest>();
-    const newPost = await reddit.submitCustomPost({ title });
+    const [newPost, authorUsername] = await Promise.all([
+      reddit.submitCustomPost({ title }),
+      reddit.getCurrentUsername(),
+    ]);
     const record: GifRecord = { data: gifData, title };
-    await redis.set(`gif:${newPost.id}`, JSON.stringify(record));
+    await Promise.all([
+      redis.set(`gif:${newPost.id}`, JSON.stringify(record)),
+      storePostMeta(newPost.id, authorUsername ?? 'anonymous', title, 'gif'),
+    ]);
 
     return c.json<PostGifResponse>({
       type: 'post-gif',

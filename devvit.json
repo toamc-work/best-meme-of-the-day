@@ -10,6 +10,26 @@
       },
       "game": {
         "entry": "game.html"
+      },
+      "daily-winner": {
+        "inline": true,
+        "entry": "daily-winner.html"
+      },
+      "daily-leaderboard": {
+        "inline": true,
+        "entry": "daily-leaderboard.html"
+      },
+      "weekly-leaderboard": {
+        "inline": true,
+        "entry": "weekly-leaderboard.html"
+      },
+      "weekly-winner": {
+        "inline": true,
+        "entry": "weekly-winner.html"
+      },
+      "meme-board": {
+        "inline": true,
+        "entry": "meme-board.html"
       }
     }
   },
@@ -20,18 +40,46 @@
   "menu": {
     "items": [
       {
-        "label": "Create a new post",
+        "label": "Create Meme Post",
         "description": "meme-of-the-day",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/post-create"
       },
       {
-        "label": "Example form",
-        "description": "Show a simple form",
+        "label": "Create Daily Winner Board",
+        "description": "Pin today's meme winner",
         "location": "subreddit",
         "forUserType": "moderator",
-        "endpoint": "/internal/menu/example-form"
+        "endpoint": "/internal/menu/board-daily-winner"
+      },
+      {
+        "label": "Create Daily Leaderboard",
+        "description": "Show today's meme rankings",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/board-daily-leaderboard"
+      },
+      {
+        "label": "Create Weekly Battle Board",
+        "description": "Weekly competition leaderboard",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/board-weekly-leaderboard"
+      },
+      {
+        "label": "Create Weekly Champion Board",
+        "description": "Show the weekly meme champion",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/board-weekly-winner"
+      },
+      {
+        "label": "Create Meme Board",
+        "description": "All-time meme archive",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/board-meme-board"
       }
     ]
   },

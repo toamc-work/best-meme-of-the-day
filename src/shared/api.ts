@@ -83,3 +83,101 @@ export type CreateMemePostResponse = {
   type: 'create-meme-post';
   postUrl: string;
 };
+
+export type DailyWinnerEntry = {
+  postId: string;
+  title: string;
+  authorUsername: string;
+  contentType: 'image' | 'video' | 'gif';
+  mediaData: string;
+  thumbnailData: string | null;
+  likes: number;
+  dislikes: number;
+  date: string;
+};
+
+export type DailyWinnerResponse =
+  | { type: 'daily-winner'; phase: 'has-winner'; entry: DailyWinnerEntry; msUntilNext: number }
+  | { type: 'daily-winner'; phase: 'no-winner'; msUntilNext: number };
+
+export type DailyLeaderboardEntry = {
+  postId: string;
+  title: string;
+  authorUsername: string;
+  contentType: 'image' | 'video' | 'gif';
+  likes: number;
+  dislikes: number;
+  rank: number;
+};
+
+export type DailyLeaderboardResponse = {
+  type: 'daily-leaderboard';
+  date: string;
+  msUntilNext: number;
+  entries: DailyLeaderboardEntry[];
+};
+
+export type WeeklyCandidate = {
+  postId: string;
+  title: string;
+  authorUsername: string;
+  contentType: 'image' | 'video' | 'gif';
+  likes: number;
+  dislikes: number;
+  userVote: 'like' | 'dislike' | null;
+};
+
+export type WeeklyLeaderboardResponse = {
+  type: 'weekly-leaderboard';
+  round: number;
+  phase: 'collecting' | 'active' | 'ended';
+  candidates: WeeklyCandidate[];
+  startMs: number | null;
+  endMs: number | null;
+  winnerId: string | null;
+};
+
+export type WeeklyWinnerEntry = {
+  postId: string;
+  title: string;
+  authorUsername: string;
+  contentType: 'image' | 'video' | 'gif';
+  mediaData: string;
+  thumbnailData: string | null;
+  likes: number;
+  dislikes: number;
+};
+
+export type WeeklyWinnerResponse =
+  | { type: 'weekly-winner'; phase: 'ended'; round: number; entry: WeeklyWinnerEntry | null }
+  | { type: 'weekly-winner'; phase: 'collecting' | 'active'; round: number; candidateCount: number; endMs: number | null };
+
+export type MemeBoardEntry = {
+  postId: string;
+  title: string;
+  authorUsername: string;
+  contentType: 'image' | 'video' | 'gif';
+  likes: number;
+  dislikes: number;
+  createdAt: number;
+};
+
+export type MemeBoardResponse = {
+  type: 'meme-board';
+  entries: MemeBoardEntry[];
+  total: number;
+  page: number;
+};
+
+export type WeeklyVoteRequest = {
+  postId: string;
+  action: 'like' | 'dislike';
+};
+
+export type WeeklyVoteResponse = {
+  type: 'weekly-vote';
+  postId: string;
+  likes: number;
+  dislikes: number;
+  userVote: 'like' | 'dislike' | null;
+};
