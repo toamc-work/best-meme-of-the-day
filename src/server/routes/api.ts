@@ -23,21 +23,18 @@ type VideoRecord = { data: string; title: string; thumbnail: string | null };
 type GifRecord = { data: string; title: string };
 
 async function getVoteCounts(
-  postId: string,
-  username: string
-): Promise<{ likes: number; dislikes: number; userVote: 'like' | 'dislike' | null }> {
+  postId: string
+): Promise<{ likes: number; dislikes: number }> {
   const votesHash = await redis.hGetAll(`meme:votes:${postId}`);
   let likes = 0;
   let dislikes = 0;
-  let userVote: 'like' | 'dislike' | null = null;
 
-  for (const [user, vote] of Object.entries(votesHash ?? {})) {
+  for (const vote of Object.values(votesHash ?? {})) {
     if (vote === 'like') likes++;
     else if (vote === 'dislike') dislikes++;
-    if (user === username) userVote = vote as 'like' | 'dislike';
   }
 
-  return { likes, dislikes, userVote };
+  return { likes, dislikes };
 }
 
 export const api = new Hono();
@@ -57,8 +54,19 @@ api.get('/init', async (c) => {
 
     const resolvedUsername = username ?? 'anonymous';
 
+    const getVotes = async () => {
+      const voteKey = `meme:votes:${postId}`;
+      const [counts, userVoteRaw] = await Promise.all([
+        getVoteCounts(postId),
+        redis.hGet(voteKey, resolvedUsername),
+      ]);
+      const userVote: 'like' | 'dislike' | null =
+        userVoteRaw === 'like' ? 'like' : userVoteRaw === 'dislike' ? 'dislike' : null;
+      return { ...counts, userVote };
+    };
+
     if (imageData) {
-      const votes = await getVoteCounts(postId, resolvedUsername);
+      const votes = await getVotes();
       return c.json<InitResponse>({
         type: 'init',
         postId,
@@ -73,7 +81,7 @@ api.get('/init', async (c) => {
     const videoRaw = await redis.get(`video:${postId}`);
     if (videoRaw) {
       const { data: videoData, title, thumbnail: thumbnailData } = JSON.parse(videoRaw) as VideoRecord;
-      const votes = await getVoteCounts(postId, resolvedUsername);
+      const votes = await getVotes();
       return c.json<InitResponse>({
         type: 'init',
         postId,
@@ -90,7 +98,7 @@ api.get('/init', async (c) => {
     const gifRaw = await redis.get(`gif:${postId}`);
     if (gifRaw) {
       const { data: gifData, title } = JSON.parse(gifRaw) as GifRecord;
-      const votes = await getVoteCounts(postId, resolvedUsername);
+      const votes = await getVotes();
       return c.json<InitResponse>({
         type: 'init',
         postId,
@@ -214,15 +222,19 @@ api.post('/vote', async (c) => {
     const voteKey = `meme:votes:${postId}`;
 
     const currentVote = await redis.hGet(voteKey, username);
+    const toggling = currentVote === action;
 
-    if (currentVote === action) {
+    if (toggling) {
       await redis.hDel(voteKey, [username]);
     } else {
       await redis.hSet(voteKey, { [username]: action });
     }
 
-    const votes = await getVoteCounts(postId, username);
-    return c.json<VoteResponse>({ type: 'vote', ...votes });
+    // Compute userVote directly from the operation — don't re-read from Redis
+    const newUserVote: 'like' | 'dislike' | null = toggling ? null : action;
+
+    const { likes, dislikes } = await getVoteCounts(postId);
+    return c.json<VoteResponse>({ type: 'vote', likes, dislikes, userVote: newUserVote });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json<ErrorResponse>({ status: 'error', message }, 400);

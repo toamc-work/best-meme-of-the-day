@@ -224,15 +224,17 @@ board.post('/weekly-vote', async (c) => {
 
     const voteKey = `weekly:votes:${round}:${postId}`;
     const currentVote = await redis.hGet(voteKey, username);
+    const toggling = currentVote === action;
 
-    if (currentVote === action) {
+    if (toggling) {
       await redis.hDel(voteKey, [username]);
     } else {
       await redis.hSet(voteKey, { [username]: action });
     }
 
-    const { likes, dislikes, userVote } = await getWeeklyVotes(round, postId, username);
-    return c.json<WeeklyVoteResponse>({ type: 'weekly-vote', postId, likes, dislikes, userVote });
+    const newUserVote: 'like' | 'dislike' | null = toggling ? null : action;
+    const { likes, dislikes } = await getWeeklyVotes(round, postId, username);
+    return c.json<WeeklyVoteResponse>({ type: 'weekly-vote', postId, likes, dislikes, userVote: newUserVote });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json<ErrorResponse>({ status: 'error', message }, 500);
