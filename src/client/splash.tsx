@@ -111,7 +111,7 @@ export const Splash = () => {
           <div className="absolute bottom-3 left-0 right-0 flex items-center justify-between px-3 pointer-events-auto">
             <div className="flex items-center gap-3">
               <button
-                className="flex items-center gap-1.5 text-white"
+                className="flex items-center gap-1.5 text-white cursor-pointer"
                 onClick={() => void handleVote('like')}
                 aria-label="Like"
               >
@@ -126,7 +126,7 @@ export const Splash = () => {
               </button>
 
               <button
-                className="flex items-center gap-1.5 text-white"
+                className="flex items-center gap-1.5 text-white cursor-pointer"
                 onClick={() => void handleVote('dislike')}
                 aria-label="Dislike"
               >
@@ -174,7 +174,7 @@ export const Splash = () => {
           <div className="absolute bottom-3 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
             <div className="flex items-center gap-4">
               <button
-                className="flex items-center gap-1.5 text-white"
+                className="flex items-center gap-1.5 text-white cursor-pointer"
                 onClick={() => void handleVote('like')}
                 aria-label="Like"
               >
@@ -189,7 +189,7 @@ export const Splash = () => {
               </button>
 
               <button
-                className="flex items-center gap-1.5 text-white"
+                className="flex items-center gap-1.5 text-white cursor-pointer"
                 onClick={() => void handleVote('dislike')}
                 aria-label="Dislike"
               >

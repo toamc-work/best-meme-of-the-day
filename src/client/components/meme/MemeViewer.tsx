@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, ThumbsDown, Flame } from 'lucide-react';
+import { Heart, HeartCrack, Flame } from 'lucide-react';
 import { navigateTo } from '@devvit/web/client';
 
 type Props = {
@@ -83,7 +83,7 @@ export const MemeViewer = ({ imageData, initialLikes, initialDislikes, initialUs
       <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-3 pointer-events-auto">
         <div className="flex items-center gap-3">
           <button
-            className="flex items-center gap-1.5 text-white"
+            className="flex items-center gap-1.5 text-white cursor-pointer"
             onClick={() => void handleVote('like')}
             aria-label="Like"
           >
@@ -95,12 +95,12 @@ export const MemeViewer = ({ imageData, initialLikes, initialDislikes, initialUs
           </button>
 
           <button
-            className="flex items-center gap-1.5 text-white"
+            className="flex items-center gap-1.5 text-white cursor-pointer"
             onClick={() => void handleVote('dislike')}
             aria-label="Dislike"
           >
-            <ThumbsDown
-              className="w-5 h-5 transition-colors"
+            <HeartCrack
+              className="w-6 h-6 transition-colors"
               style={{ color: userVote === 'dislike' ? '#888' : 'white' }}
             />
             <span className="text-sm font-semibold tabular-nums">{dislikes}</span>

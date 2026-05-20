@@ -81,7 +81,7 @@ export const GifViewer = ({ gifData, initialLikes, initialDislikes, initialUserV
       <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-3 pointer-events-auto">
         <div className="flex items-center gap-3">
           <button
-            className="flex items-center gap-1.5 text-white"
+            className="flex items-center gap-1.5 text-white cursor-pointer"
             onClick={() => void handleVote('like')}
             aria-label="Like"
           >
@@ -96,7 +96,7 @@ export const GifViewer = ({ gifData, initialLikes, initialDislikes, initialUserV
           </button>
 
           <button
-            className="flex items-center gap-1.5 text-white"
+            className="flex items-center gap-1.5 text-white cursor-pointer"
             onClick={() => void handleVote('dislike')}
             aria-label="Dislike"
           >
