@@ -2,7 +2,7 @@ import './index.css';
 
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BarChart2, Clock, Image, Play, Layers } from 'lucide-react';
+import { BarChart2, Clock, Image, Play, Layers, ArrowBigUp } from 'lucide-react';
 import type { DailyLeaderboardResponse, DailyLeaderboardEntry } from '../shared/api';
 
 function useCountdown(endAt: number | null): string {
@@ -84,9 +84,17 @@ export const DailyLeaderboard = () => {
                 </div>
                 <p className="text-gray-500 text-xs">u/{entry.authorUsername}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0 text-xs">
-                <span className="text-[#d93900] font-semibold">❤ {entry.likes}</span>
-                <span className="text-gray-500">💔 {entry.dislikes}</span>
+              <div className="flex items-center gap-1 shrink-0">
+                <ArrowBigUp
+                  className="w-4 h-4"
+                  style={{ color: entry.score > 0 ? '#d93900' : '#6b7280' }}
+                />
+                <span
+                  className="text-sm font-semibold tabular-nums"
+                  style={{ color: entry.score > 0 ? '#d93900' : '#6b7280' }}
+                >
+                  {entry.score}
+                </span>
               </div>
             </div>
           ))}

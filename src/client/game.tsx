@@ -38,9 +38,7 @@ export const App = () => {
         <VideoViewer
           videoData={initData.videoData}
           autoPlay
-          initialLikes={initData.likes}
-          initialDislikes={initData.dislikes}
-          initialUserVote={initData.userVote}
+          initialScore={initData.score}
         />
       );
     }
@@ -48,18 +46,14 @@ export const App = () => {
       return (
         <GifViewer
           gifData={initData.gifData}
-          initialLikes={initData.likes}
-          initialDislikes={initData.dislikes}
-          initialUserVote={initData.userVote}
+          initialScore={initData.score}
         />
       );
     }
     return (
       <MemeViewer
         imageData={initData.imageData}
-        initialLikes={initData.likes}
-        initialDislikes={initData.dislikes}
-        initialUserVote={initData.userVote}
+        initialScore={initData.score}
       />
     );
   }

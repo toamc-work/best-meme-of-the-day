@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { context, redis, reddit } from '@devvit/web/server';
-import { storePostMeta } from '../lib/competition';
+import { storePostMeta, getRedditScore } from '../lib/competition';
 import type {
   InitResponse,
   PostMemeRequest,
@@ -9,8 +9,6 @@ import type {
   PostVideoResponse,
   PostGifRequest,
   PostGifResponse,
-  VoteRequest,
-  VoteResponse,
   CreateMemePostResponse,
 } from '../../shared/api';
 
@@ -21,21 +19,6 @@ type ErrorResponse = {
 
 type VideoRecord = { data: string; title: string; thumbnail: string | null };
 type GifRecord = { data: string; title: string };
-
-async function getVoteCounts(
-  postId: string
-): Promise<{ likes: number; dislikes: number }> {
-  const votesHash = await redis.hGetAll(`meme:votes:${postId}`);
-  let likes = 0;
-  let dislikes = 0;
-
-  for (const vote of Object.values(votesHash ?? {})) {
-    if (vote === 'like') likes++;
-    else if (vote === 'dislike') dislikes++;
-  }
-
-  return { likes, dislikes };
-}
 
 export const api = new Hono();
 
@@ -54,19 +37,8 @@ api.get('/init', async (c) => {
 
     const resolvedUsername = username ?? 'anonymous';
 
-    const getVotes = async () => {
-      const voteKey = `meme:votes:${postId}`;
-      const [counts, userVoteRaw] = await Promise.all([
-        getVoteCounts(postId),
-        redis.hGet(voteKey, resolvedUsername),
-      ]);
-      const userVote: 'like' | 'dislike' | null =
-        userVoteRaw === 'like' ? 'like' : userVoteRaw === 'dislike' ? 'dislike' : null;
-      return { ...counts, userVote };
-    };
-
     if (imageData) {
-      const votes = await getVotes();
+      const score = await getRedditScore(postId);
       return c.json<InitResponse>({
         type: 'init',
         postId,
@@ -74,14 +46,14 @@ api.get('/init', async (c) => {
         mode: 'viewer',
         contentType: 'image',
         imageData,
-        ...votes,
+        score,
       });
     }
 
     const videoRaw = await redis.get(`video:${postId}`);
     if (videoRaw) {
       const { data: videoData, title, thumbnail: thumbnailData } = JSON.parse(videoRaw) as VideoRecord;
-      const votes = await getVotes();
+      const score = await getRedditScore(postId);
       return c.json<InitResponse>({
         type: 'init',
         postId,
@@ -91,14 +63,14 @@ api.get('/init', async (c) => {
         videoData,
         thumbnailData: thumbnailData ?? null,
         title,
-        ...votes,
+        score,
       });
     }
 
     const gifRaw = await redis.get(`gif:${postId}`);
     if (gifRaw) {
       const { data: gifData, title } = JSON.parse(gifRaw) as GifRecord;
-      const votes = await getVotes();
+      const score = await getRedditScore(postId);
       return c.json<InitResponse>({
         type: 'init',
         postId,
@@ -107,7 +79,7 @@ api.get('/init', async (c) => {
         contentType: 'gif',
         gifData,
         title,
-        ...votes,
+        score,
       });
     }
 
@@ -203,32 +175,6 @@ api.post('/post-gif', async (c) => {
       type: 'post-gif',
       postUrl: `https://reddit.com/r/${subredditName}/comments/${newPost.id}`,
     });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json<ErrorResponse>({ status: 'error', message }, 400);
-  }
-});
-
-api.post('/vote', async (c) => {
-  const { postId } = context;
-
-  if (!postId) {
-    return c.json<ErrorResponse>({ status: 'error', message: 'postId is required' }, 400);
-  }
-
-  try {
-    const username = (await reddit.getCurrentUsername()) ?? 'anonymous';
-    const { action } = await c.req.json<VoteRequest>();
-    const voteKey = `meme:votes:${postId}`;
-
-    const currentVote = await redis.hGet(voteKey, username);
-
-    if (currentVote !== action) {
-      await redis.hSet(voteKey, { [username]: action });
-    }
-
-    const { likes, dislikes } = await getVoteCounts(postId);
-    return c.json<VoteResponse>({ type: 'vote', likes, dislikes, userVote: action });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json<ErrorResponse>({ status: 'error', message }, 400);

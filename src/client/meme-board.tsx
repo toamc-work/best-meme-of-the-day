@@ -95,10 +95,6 @@ export const MemeBoard = () => {
                   <span>{timeAgo(entry.createdAt)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0 text-xs">
-                <span className="text-[#d93900] font-semibold">❤ {entry.likes}</span>
-                <span className="text-gray-500">💔 {entry.dislikes}</span>
-              </div>
             </div>
           ))}
         </div>

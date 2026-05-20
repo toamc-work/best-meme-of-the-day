@@ -2,7 +2,7 @@ import './index.css';
 
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Flame, Clock, Play, Layers, Heart, HeartCrack, Trophy } from 'lucide-react';
+import { Flame, Clock, Play, Layers, ArrowBigUp, Trophy } from 'lucide-react';
 import type { WeeklyLeaderboardResponse, WeeklyCandidate } from '../shared/api';
 
 function useCountdown(ms: number | null) {
@@ -22,73 +22,40 @@ function useCountdown(ms: number | null) {
 const CandidateRow = ({
   candidate,
   rank,
-  phase,
-  onVote,
-  voting,
 }: {
   candidate: WeeklyCandidate;
   rank: number;
-  phase: string;
-  onVote: (postId: string, action: 'like' | 'dislike') => void;
-  voting: string | null;
-}) => {
-  const isVoting = voting === candidate.postId;
-  return (
-    <div className="px-3 py-2.5 border-b border-white/5">
-      <div className="flex items-start gap-2">
-        <span className="text-gray-500 text-xs w-4 shrink-0 mt-0.5">#{rank}</span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1 mb-0.5">
-            {candidate.contentType === 'video' && <Play className="w-3 h-3 text-gray-400 shrink-0" />}
-            {candidate.contentType === 'gif' && <Layers className="w-3 h-3 text-gray-400 shrink-0" />}
-            <p className="text-white text-sm font-medium truncate">{candidate.title}</p>
-          </div>
-          <p className="text-gray-500 text-xs">u/{candidate.authorUsername}</p>
+}) => (
+  <div className="px-3 py-2.5 border-b border-white/5">
+    <div className="flex items-center gap-2">
+      <span className="text-gray-500 text-xs w-4 shrink-0">#{rank}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1 mb-0.5">
+          {candidate.contentType === 'video' && <Play className="w-3 h-3 text-gray-400 shrink-0" />}
+          {candidate.contentType === 'gif' && <Layers className="w-3 h-3 text-gray-400 shrink-0" />}
+          <p className="text-white text-sm font-medium truncate">{candidate.title}</p>
         </div>
+        <p className="text-gray-500 text-xs">u/{candidate.authorUsername}</p>
       </div>
-      {phase === 'active' && (
-        <div className="flex items-center gap-3 mt-2 ml-6">
-          <button
-            className="flex items-center gap-1 text-xs"
-            onClick={() => onVote(candidate.postId, 'like')}
-            disabled={isVoting}
-          >
-            <Heart
-              className="w-4 h-4"
-              style={{
-                color: candidate.userVote === 'like' ? '#d93900' : 'white',
-                fill: candidate.userVote === 'like' ? '#d93900' : 'none',
-              }}
-            />
-            <span className="text-white font-semibold tabular-nums">{candidate.likes}</span>
-          </button>
-          <button
-            className="flex items-center gap-1 text-xs"
-            onClick={() => onVote(candidate.postId, 'dislike')}
-            disabled={isVoting}
-          >
-            <HeartCrack
-              className="w-4 h-4"
-              style={{ color: candidate.userVote === 'dislike' ? '#888' : 'white' }}
-            />
-            <span className="text-white font-semibold tabular-nums">{candidate.dislikes}</span>
-          </button>
-        </div>
-      )}
-      {phase !== 'active' && (
-        <div className="flex items-center gap-3 mt-1 ml-6 text-xs text-gray-400">
-          <span>❤ {candidate.likes}</span>
-          <span>💔 {candidate.dislikes}</span>
-        </div>
-      )}
+      <div className="flex items-center gap-1 shrink-0">
+        <ArrowBigUp
+          className="w-4 h-4"
+          style={{ color: candidate.score > 0 ? '#d93900' : '#6b7280' }}
+        />
+        <span
+          className="text-sm font-semibold tabular-nums"
+          style={{ color: candidate.score > 0 ? '#d93900' : '#6b7280' }}
+        >
+          {candidate.score}
+        </span>
+      </div>
     </div>
-  );
-};
+  </div>
+);
 
 export const WeeklyLeaderboard = () => {
   const [data, setData] = useState<WeeklyLeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [voting, setVoting] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -102,54 +69,6 @@ export const WeeklyLeaderboard = () => {
   }, []);
 
   const countdown = useCountdown(data?.endMs ?? null);
-
-  const handleVote = async (postId: string, action: 'like' | 'dislike') => {
-    if (voting) return;
-    const candidate = data?.candidates.find((c) => c.postId === postId);
-    if (!candidate || candidate.userVote === action) return;
-    setVoting(postId);
-
-    setData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        candidates: prev.candidates.map((c) => {
-          if (c.postId !== postId) return c;
-          const wasOpposite = c.userVote !== null && c.userVote !== action;
-          return {
-            ...c,
-            userVote: action,
-            likes: action === 'like' ? c.likes + 1 : wasOpposite ? c.likes - 1 : c.likes,
-            dislikes: action === 'dislike' ? c.dislikes + 1 : wasOpposite ? c.dislikes - 1 : c.dislikes,
-          };
-        }),
-      };
-    });
-
-    try {
-      const res = await fetch('/api/board/weekly-vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, action }),
-      });
-      if (res.ok) {
-        const result = await res.json() as { postId: string; likes: number; dislikes: number; userVote: 'like' | 'dislike' | null };
-        setData((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            candidates: prev.candidates.map((c) =>
-              c.postId === result.postId ? { ...c, likes: result.likes, dislikes: result.dislikes, userVote: result.userVote } : c
-            ),
-          };
-        });
-      }
-    } catch {
-      // keep optimistic update
-    } finally {
-      setVoting(null);
-    }
-  };
 
   if (loading) return <div className="w-full h-screen bg-[#0e0e0e]" />;
 
@@ -203,9 +122,6 @@ export const WeeklyLeaderboard = () => {
                 key={c.postId}
                 candidate={c}
                 rank={i + 1}
-                phase={data.phase}
-                onVote={handleVote}
-                voting={voting}
               />
             ))
           )}

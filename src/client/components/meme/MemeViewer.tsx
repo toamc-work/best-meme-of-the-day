@@ -1,62 +1,14 @@
-import { useState } from 'react';
-import { Heart, HeartCrack, Flame } from 'lucide-react';
+import { ArrowBigUp, Flame } from 'lucide-react';
 import { navigateTo } from '@devvit/web/client';
+import { useState } from 'react';
 
 type Props = {
   imageData: string;
-  initialLikes: number;
-  initialDislikes: number;
-  initialUserVote: 'like' | 'dislike' | null;
+  initialScore: number;
 };
 
-export const MemeViewer = ({ imageData, initialLikes, initialDislikes, initialUserVote }: Props) => {
-  const [likes, setLikes] = useState(initialLikes);
-  const [dislikes, setDislikes] = useState(initialDislikes);
-  const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(initialUserVote);
-  const [voting, setVoting] = useState(false);
+export const MemeViewer = ({ imageData, initialScore }: Props) => {
   const [creating, setCreating] = useState(false);
-
-  const handleVote = async (action: 'like' | 'dislike') => {
-    if (voting || userVote === action) return;
-
-    const prevLikes = likes;
-    const prevDislikes = dislikes;
-    const prevVote = userVote;
-
-    const wasOpposite = userVote !== null && userVote !== action;
-
-    setUserVote(action);
-    setLikes((l) => {
-      if (action === 'like') return l + 1;
-      if (wasOpposite) return l - 1;
-      return l;
-    });
-    setDislikes((d) => {
-      if (action === 'dislike') return d + 1;
-      if (wasOpposite) return d - 1;
-      return d;
-    });
-
-    setVoting(true);
-    try {
-      const res = await fetch('/api/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      if (!res.ok) throw new Error('vote failed');
-      const data = await res.json();
-      setLikes(data.likes);
-      setDislikes(data.dislikes);
-      setUserVote(data.userVote);
-    } catch {
-      setLikes(prevLikes);
-      setDislikes(prevDislikes);
-      setUserVote(prevVote);
-    } finally {
-      setVoting(false);
-    }
-  };
 
   const handleCreateOwn = async () => {
     if (creating) return;
@@ -75,34 +27,20 @@ export const MemeViewer = ({ imageData, initialLikes, initialDislikes, initialUs
     <div className="relative w-full h-screen overflow-hidden bg-[#0e0e0e] flex items-center justify-center">
       <img src={imageData} alt="Meme" className="w-full h-full object-contain" />
 
-      {/* bottom gradient + controls */}
       <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
 
       <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-3 pointer-events-auto">
-        <div className="flex items-center gap-3">
-          <button
-            className="flex items-center gap-1.5 text-white cursor-pointer"
-            onClick={() => void handleVote('like')}
-            aria-label="Like"
+        <div className="flex items-center gap-1">
+          <ArrowBigUp
+            className="w-5 h-5"
+            style={{ color: initialScore > 0 ? '#d93900' : '#6b7280' }}
+          />
+          <span
+            className="text-sm font-semibold tabular-nums"
+            style={{ color: initialScore > 0 ? '#d93900' : '#6b7280' }}
           >
-            <Heart
-              className="w-6 h-6 transition-colors"
-              style={{ color: userVote === 'like' ? '#d93900' : 'white', fill: userVote === 'like' ? '#d93900' : 'none' }}
-            />
-            <span className="text-sm font-semibold tabular-nums">{likes}</span>
-          </button>
-
-          <button
-            className="flex items-center gap-1.5 text-white cursor-pointer"
-            onClick={() => void handleVote('dislike')}
-            aria-label="Dislike"
-          >
-            <HeartCrack
-              className="w-6 h-6 transition-colors"
-              style={{ color: userVote === 'dislike' ? '#888' : 'white' }}
-            />
-            <span className="text-sm font-semibold tabular-nums">{dislikes}</span>
-          </button>
+            {initialScore}
+          </span>
         </div>
 
         <button

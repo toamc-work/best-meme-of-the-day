@@ -2,7 +2,7 @@ import './index.css';
 
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Crown, Play, Layers, Clock, Trophy } from 'lucide-react';
+import { Crown, Play, Layers, Clock, Trophy, ArrowBigUp } from 'lucide-react';
 import type { WeeklyWinnerResponse } from '../shared/api';
 
 function useCountdown(ms: number | null) {
@@ -122,9 +122,17 @@ export const WeeklyWinner = () => {
           <p className="text-white font-semibold text-sm truncate">{entry.title}</p>
           <p className="text-gray-400 text-xs">u/{entry.authorUsername}</p>
         </div>
-        <div className="flex items-center gap-3 shrink-0 ml-2">
-          <span className="text-[#d93900] font-bold text-sm">❤ {entry.likes}</span>
-          <span className="text-gray-400 text-sm">💔 {entry.dislikes}</span>
+        <div className="flex items-center gap-1 shrink-0 ml-2">
+          <ArrowBigUp
+            className="w-5 h-5"
+            style={{ color: entry.score > 0 ? '#d93900' : '#6b7280' }}
+          />
+          <span
+            className="text-sm font-semibold tabular-nums"
+            style={{ color: entry.score > 0 ? '#d93900' : '#6b7280' }}
+          >
+            {entry.score}
+          </span>
         </div>
       </div>
     </div>

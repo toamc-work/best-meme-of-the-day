@@ -12,9 +12,7 @@ export type InitResponse = {
       mode: 'viewer';
       contentType: 'image';
       imageData: string;
-      likes: number;
-      dislikes: number;
-      userVote: 'like' | 'dislike' | null;
+      score: number;
     }
   | {
       mode: 'viewer';
@@ -22,18 +20,14 @@ export type InitResponse = {
       videoData: string;
       thumbnailData: string | null;
       title: string;
-      likes: number;
-      dislikes: number;
-      userVote: 'like' | 'dislike' | null;
+      score: number;
     }
   | {
       mode: 'viewer';
       contentType: 'gif';
       gifData: string;
       title: string;
-      likes: number;
-      dislikes: number;
-      userVote: 'like' | 'dislike' | null;
+      score: number;
     }
 );
 
@@ -68,17 +62,6 @@ export type PostGifResponse = {
   postUrl: string;
 };
 
-export type VoteRequest = {
-  action: 'like' | 'dislike';
-};
-
-export type VoteResponse = {
-  type: 'vote';
-  likes: number;
-  dislikes: number;
-  userVote: 'like' | 'dislike' | null;
-};
-
 export type CreateMemePostResponse = {
   type: 'create-meme-post';
   postUrl: string;
@@ -91,8 +74,7 @@ export type DailyWinnerEntry = {
   contentType: 'image' | 'video' | 'gif';
   mediaData: string;
   thumbnailData: string | null;
-  likes: number;
-  dislikes: number;
+  score: number;
   date: string;
 };
 
@@ -105,8 +87,7 @@ export type DailyLeaderboardEntry = {
   title: string;
   authorUsername: string;
   contentType: 'image' | 'video' | 'gif';
-  likes: number;
-  dislikes: number;
+  score: number;
   rank: number;
 };
 
@@ -122,9 +103,7 @@ export type WeeklyCandidate = {
   title: string;
   authorUsername: string;
   contentType: 'image' | 'video' | 'gif';
-  likes: number;
-  dislikes: number;
-  userVote: 'like' | 'dislike' | null;
+  score: number;
 };
 
 export type WeeklyLeaderboardResponse = {
@@ -144,8 +123,7 @@ export type WeeklyWinnerEntry = {
   contentType: 'image' | 'video' | 'gif';
   mediaData: string;
   thumbnailData: string | null;
-  likes: number;
-  dislikes: number;
+  score: number;
 };
 
 export type WeeklyWinnerResponse =
@@ -157,8 +135,6 @@ export type MemeBoardEntry = {
   title: string;
   authorUsername: string;
   contentType: 'image' | 'video' | 'gif';
-  likes: number;
-  dislikes: number;
   createdAt: number;
 };
 
@@ -167,17 +143,4 @@ export type MemeBoardResponse = {
   entries: MemeBoardEntry[];
   total: number;
   page: number;
-};
-
-export type WeeklyVoteRequest = {
-  postId: string;
-  action: 'like' | 'dislike';
-};
-
-export type WeeklyVoteResponse = {
-  type: 'weekly-vote';
-  postId: string;
-  likes: number;
-  dislikes: number;
-  userVote: 'like' | 'dislike' | null;
 };

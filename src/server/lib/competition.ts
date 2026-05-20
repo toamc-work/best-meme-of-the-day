@@ -1,4 +1,5 @@
-import { redis } from '@devvit/web/server';
+import { redis, reddit } from '@devvit/web/server';
+import type { T3 } from '@devvit/shared-types/tid.js';
 
 export type PostMeta = {
   authorUsername: string;
@@ -54,35 +55,13 @@ export async function getPostMeta(postId: string): Promise<PostMeta | null> {
   };
 }
 
-export async function getVoteCountsFor(
-  postId: string,
-  username = ''
-): Promise<{ likes: number; dislikes: number; userVote: 'like' | 'dislike' | null }> {
-  const h = await redis.hGetAll(`meme:votes:${postId}`);
-  let likes = 0, dislikes = 0;
-  let userVote: 'like' | 'dislike' | null = null;
-  for (const [user, vote] of Object.entries(h ?? {})) {
-    if (vote === 'like') likes++;
-    else if (vote === 'dislike') dislikes++;
-    if (user === username) userVote = vote as 'like' | 'dislike';
+async function getRedditScore(postId: string): Promise<number> {
+  try {
+    const post = await reddit.getPostById(postId as T3);
+    return post.score;
+  } catch {
+    return 0;
   }
-  return { likes, dislikes, userVote };
-}
-
-export async function getWeeklyVotes(
-  round: number,
-  postId: string,
-  username = ''
-): Promise<{ likes: number; dislikes: number; userVote: 'like' | 'dislike' | null }> {
-  const h = await redis.hGetAll(`weekly:votes:${round}:${postId}`);
-  let likes = 0, dislikes = 0;
-  let userVote: 'like' | 'dislike' | null = null;
-  for (const [user, vote] of Object.entries(h ?? {})) {
-    if (vote === 'like') likes++;
-    else if (vote === 'dislike') dislikes++;
-    if (user === username) userVote = vote as 'like' | 'dislike';
-  }
-  return { likes, dislikes, userVote };
 }
 
 async function addToWeeklyCandidates(postId: string): Promise<void> {
@@ -108,13 +87,14 @@ export async function computeDailyWinner(date: string): Promise<string | null> {
     return null;
   }
 
+  const scores = await Promise.all(members.map(({ member: pid }) => getRedditScore(pid)));
+
   let bestId: string | null = null;
   let bestScore = -Infinity;
-  for (const { member: pid } of members) {
-    const { likes, dislikes } = await getVoteCountsFor(pid);
-    const score = likes - dislikes;
+  members.forEach(({ member: pid }, i) => {
+    const score = scores[i] ?? 0;
     if (score > bestScore) { bestScore = score; bestId = pid; }
-  }
+  });
 
   await redis.set(`daily:winner:${date}`, bestId ?? '');
   if (bestId) await addToWeeklyCandidates(bestId);
@@ -162,13 +142,16 @@ export async function getWeeklyState(): Promise<{
     return { round, phase: 'ended', candidateIds, startMs, endMs, winnerId: existingWinner || null };
   }
 
-  // Lazily declare winner
-  let bestId: string | null = null, bestScore = -Infinity;
-  for (const id of candidateIds) {
-    const { likes, dislikes } = await getWeeklyVotes(round, id);
-    const score = likes - dislikes;
+  // Lazily declare winner using Reddit scores
+  const scores = await Promise.all(candidateIds.map((id) => getRedditScore(id)));
+
+  let bestId: string | null = null;
+  let bestScore = -Infinity;
+  candidateIds.forEach((id, i) => {
+    const score = scores[i] ?? 0;
     if (score > bestScore) { bestScore = score; bestId = id; }
-  }
+  });
+
   await redis.set(`weekly:winner:${round}`, bestId ?? '');
   await redis.set('weekly:round', (round + 1).toString());
 
@@ -181,3 +164,5 @@ export async function getMediaData(postId: string, contentType: PostMeta['conten
   if (!raw) return null;
   return (JSON.parse(raw) as { data: string }).data;
 }
+
+export { getRedditScore };

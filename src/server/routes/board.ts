@@ -1,23 +1,20 @@
 import { Hono } from 'hono';
-import { redis, reddit } from '@devvit/web/server';
+import { redis } from '@devvit/web/server';
 import type {
   DailyWinnerResponse,
   DailyLeaderboardResponse,
   WeeklyLeaderboardResponse,
   WeeklyWinnerResponse,
   MemeBoardResponse,
-  WeeklyVoteRequest,
-  WeeklyVoteResponse,
 } from '../../shared/api';
 import {
   getTodayDateUTC,
   getMsUntilNextMidnightUTC,
   getMostRecentDailyWinner,
   getPostMeta,
-  getVoteCountsFor,
-  getWeeklyVotes,
   getWeeklyState,
   getMediaData,
+  getRedditScore,
 } from '../lib/competition';
 
 type ErrorResponse = { status: 'error'; message: string };
@@ -27,10 +24,7 @@ export const board = new Hono();
 
 board.get('/daily-winner', async (c) => {
   try {
-    const [username, msUntilNext] = [
-      (await reddit.getCurrentUsername()) ?? '',
-      getMsUntilNextMidnightUTC(),
-    ];
+    const msUntilNext = getMsUntilNextMidnightUTC();
     const result = await getMostRecentDailyWinner();
 
     if (!result) {
@@ -43,9 +37,9 @@ board.get('/daily-winner', async (c) => {
       return c.json<DailyWinnerResponse>({ type: 'daily-winner', phase: 'no-winner', msUntilNext });
     }
 
-    const [mediaData, { likes, dislikes }] = await Promise.all([
+    const [mediaData, score] = await Promise.all([
       getMediaData(postId, meta.contentType),
-      getVoteCountsFor(postId, username),
+      getRedditScore(postId),
     ]);
 
     if (!mediaData) {
@@ -68,8 +62,7 @@ board.get('/daily-winner', async (c) => {
         contentType: meta.contentType,
         mediaData,
         thumbnailData,
-        likes,
-        dislikes,
+        score,
         date,
       },
       msUntilNext,
@@ -82,7 +75,6 @@ board.get('/daily-winner', async (c) => {
 
 board.get('/daily-leaderboard', async (c) => {
   try {
-    const username = (await reddit.getCurrentUsername()) ?? '';
     const today = getTodayDateUTC();
     const msUntilNext = getMsUntilNextMidnightUTC();
 
@@ -90,17 +82,17 @@ board.get('/daily-leaderboard', async (c) => {
 
     const rows = await Promise.all(
       members.map(async ({ member: postId }) => {
-        const [meta, { likes, dislikes }] = await Promise.all([
+        const [meta, score] = await Promise.all([
           getPostMeta(postId),
-          getVoteCountsFor(postId, username),
+          getRedditScore(postId),
         ]);
         if (!meta) return null;
-        return { postId, title: meta.title, authorUsername: meta.authorUsername, contentType: meta.contentType, likes, dislikes };
+        return { postId, title: meta.title, authorUsername: meta.authorUsername, contentType: meta.contentType, score };
       })
     );
 
     const valid = (rows.filter(Boolean) as NonNullable<typeof rows[number]>[])
-      .sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes))
+      .sort((a, b) => b.score - a.score)
       .map((e, i) => ({ ...e, rank: i + 1 }));
 
     return c.json<DailyLeaderboardResponse>({ type: 'daily-leaderboard', date: today, msUntilNext, entries: valid });
@@ -112,23 +104,22 @@ board.get('/daily-leaderboard', async (c) => {
 
 board.get('/weekly-leaderboard', async (c) => {
   try {
-    const username = (await reddit.getCurrentUsername()) ?? '';
     const { round, phase, candidateIds, startMs, endMs, winnerId } = await getWeeklyState();
 
     const rows = await Promise.all(
       candidateIds.map(async (postId) => {
-        const [meta, votes] = await Promise.all([
+        const [meta, score] = await Promise.all([
           getPostMeta(postId),
-          getWeeklyVotes(round, postId, username),
+          getRedditScore(postId),
         ]);
         if (!meta) return null;
-        return { postId, title: meta.title, authorUsername: meta.authorUsername, contentType: meta.contentType, ...votes };
+        return { postId, title: meta.title, authorUsername: meta.authorUsername, contentType: meta.contentType, score };
       })
     );
 
     const candidates = (rows.filter(Boolean) as NonNullable<typeof rows[number]>[]);
     if (phase !== 'collecting') {
-      candidates.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+      candidates.sort((a, b) => b.score - a.score);
     }
 
     return c.json<WeeklyLeaderboardResponse>({ type: 'weekly-leaderboard', round, phase, candidates, startMs, endMs, winnerId });
@@ -140,7 +131,6 @@ board.get('/weekly-leaderboard', async (c) => {
 
 board.get('/weekly-winner', async (c) => {
   try {
-    const username = (await reddit.getCurrentUsername()) ?? '';
     const { round, phase, candidateIds, endMs, winnerId } = await getWeeklyState();
 
     if (phase !== 'ended' || !winnerId) {
@@ -152,9 +142,9 @@ board.get('/weekly-winner', async (c) => {
       return c.json<WeeklyWinnerResponse>({ type: 'weekly-winner', phase: 'ended', round, entry: null });
     }
 
-    const [mediaData, { likes, dislikes }] = await Promise.all([
+    const [mediaData, score] = await Promise.all([
       getMediaData(winnerId, meta.contentType),
-      getWeeklyVotes(round, winnerId, username),
+      getRedditScore(winnerId),
     ]);
 
     if (!mediaData) {
@@ -171,7 +161,7 @@ board.get('/weekly-winner', async (c) => {
       type: 'weekly-winner',
       phase: 'ended',
       round,
-      entry: { postId: winnerId, title: meta.title, authorUsername: meta.authorUsername, contentType: meta.contentType, mediaData, thumbnailData, likes, dislikes },
+      entry: { postId: winnerId, title: meta.title, authorUsername: meta.authorUsername, contentType: meta.contentType, mediaData, thumbnailData, score },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -181,7 +171,6 @@ board.get('/weekly-winner', async (c) => {
 
 board.get('/meme-board', async (c) => {
   try {
-    const username = (await reddit.getCurrentUsername()) ?? '';
     const page = parseInt(c.req.query('page') ?? '0');
     const pageSize = 20;
     const offset = page * pageSize;
@@ -191,12 +180,9 @@ board.get('/meme-board', async (c) => {
 
     const rows = await Promise.all(
       members.map(async ({ member: postId }) => {
-        const [meta, { likes, dislikes }] = await Promise.all([
-          getPostMeta(postId),
-          getVoteCountsFor(postId, username),
-        ]);
+        const meta = await getPostMeta(postId);
         if (!meta) return null;
-        return { postId, title: meta.title, authorUsername: meta.authorUsername, contentType: meta.contentType, likes, dislikes, createdAt: meta.createdAt };
+        return { postId, title: meta.title, authorUsername: meta.authorUsername, contentType: meta.contentType, createdAt: meta.createdAt };
       })
     );
 
@@ -208,31 +194,3 @@ board.get('/meme-board', async (c) => {
   }
 });
 
-board.post('/weekly-vote', async (c) => {
-  try {
-    const username = (await reddit.getCurrentUsername()) ?? '';
-    if (!username) {
-      return c.json<ErrorResponse>({ status: 'error', message: 'Must be logged in to vote' }, 401);
-    }
-
-    const { postId, action } = await c.req.json<WeeklyVoteRequest>();
-    const { round, phase } = await getWeeklyState();
-
-    if (phase !== 'active') {
-      return c.json<ErrorResponse>({ status: 'error', message: 'Weekly voting is not active' }, 400);
-    }
-
-    const voteKey = `weekly:votes:${round}:${postId}`;
-    const currentVote = await redis.hGet(voteKey, username);
-
-    if (currentVote !== action) {
-      await redis.hSet(voteKey, { [username]: action });
-    }
-
-    const { likes, dislikes } = await getWeeklyVotes(round, postId, username);
-    return c.json<WeeklyVoteResponse>({ type: 'weekly-vote', postId, likes, dislikes, userVote: action });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json<ErrorResponse>({ status: 'error', message }, 500);
-  }
-});
