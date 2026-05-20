@@ -105,6 +105,8 @@ export const WeeklyLeaderboard = () => {
 
   const handleVote = async (postId: string, action: 'like' | 'dislike') => {
     if (voting) return;
+    const candidate = data?.candidates.find((c) => c.postId === postId);
+    if (!candidate || candidate.userVote === action) return;
     setVoting(postId);
 
     setData((prev) => {
@@ -113,13 +115,12 @@ export const WeeklyLeaderboard = () => {
         ...prev,
         candidates: prev.candidates.map((c) => {
           if (c.postId !== postId) return c;
-          const toggling = c.userVote === action;
           const wasOpposite = c.userVote !== null && c.userVote !== action;
           return {
             ...c,
-            userVote: toggling ? null : action,
-            likes: action === 'like' ? (toggling ? c.likes - 1 : c.likes + 1) : wasOpposite ? c.likes - 1 : c.likes,
-            dislikes: action === 'dislike' ? (toggling ? c.dislikes - 1 : c.dislikes + 1) : wasOpposite ? c.dislikes - 1 : c.dislikes,
+            userVote: action,
+            likes: action === 'like' ? c.likes + 1 : wasOpposite ? c.likes - 1 : c.likes,
+            dislikes: action === 'dislike' ? c.dislikes + 1 : wasOpposite ? c.dislikes - 1 : c.dislikes,
           };
         }),
       };

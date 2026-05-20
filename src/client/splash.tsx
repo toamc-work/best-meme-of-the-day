@@ -41,18 +41,17 @@ export const Splash = () => {
   }
 
   const handleVote = async (action: 'like' | 'dislike') => {
-    if (voting) return;
+    if (voting || userVote === action) return;
     const prev = { likes, dislikes, userVote };
-    const toggling = userVote === action;
     const wasOpposite = userVote !== null && userVote !== action;
-    setUserVote(toggling ? null : action);
+    setUserVote(action);
     setLikes((l) => {
-      if (action === 'like') return toggling ? l - 1 : l + 1;
+      if (action === 'like') return l + 1;
       if (wasOpposite) return l - 1;
       return l;
     });
     setDislikes((d) => {
-      if (action === 'dislike') return toggling ? d - 1 : d + 1;
+      if (action === 'dislike') return d + 1;
       if (wasOpposite) return d - 1;
       return d;
     });

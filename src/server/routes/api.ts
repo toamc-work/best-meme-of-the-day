@@ -222,19 +222,13 @@ api.post('/vote', async (c) => {
     const voteKey = `meme:votes:${postId}`;
 
     const currentVote = await redis.hGet(voteKey, username);
-    const toggling = currentVote === action;
 
-    if (toggling) {
-      await redis.hDel(voteKey, [username]);
-    } else {
+    if (currentVote !== action) {
       await redis.hSet(voteKey, { [username]: action });
     }
 
-    // Compute userVote directly from the operation — don't re-read from Redis
-    const newUserVote: 'like' | 'dislike' | null = toggling ? null : action;
-
     const { likes, dislikes } = await getVoteCounts(postId);
-    return c.json<VoteResponse>({ type: 'vote', likes, dislikes, userVote: newUserVote });
+    return c.json<VoteResponse>({ type: 'vote', likes, dislikes, userVote: action });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json<ErrorResponse>({ status: 'error', message }, 400);
