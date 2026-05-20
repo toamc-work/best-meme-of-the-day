@@ -52,6 +52,13 @@ export const MemeCanvas = ({
         className="w-full h-auto block"
         draggable={false}
       />
+      {layers.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span className="text-white/50 text-sm font-medium select-none">
+            Double-click to add text
+          </span>
+        </div>
+      )}
       {layers.map((layer) => (
         <TextLayer
           key={layer.id}
