@@ -28,6 +28,20 @@ export const Splash = () => {
   }
 
   if (initData?.mode === 'viewer') {
+    if (initData.contentType === 'video') {
+      return (
+        <div className="w-full h-screen overflow-hidden bg-[#0e0e0e] flex flex-col items-center justify-center gap-4">
+          <p className="text-white font-bold text-lg px-4 text-center">{initData.title}</p>
+          <button
+            className="bg-[#d93900] hover:bg-[#c23300] text-white rounded-full px-6 py-2.5 font-bold text-sm transition-colors"
+            onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}
+          >
+            ▶ Watch Video
+          </button>
+        </div>
+      );
+    }
+
     return (
       <MemeViewer
         imageData={initData.imageData}

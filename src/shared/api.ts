@@ -6,7 +6,17 @@ export type InitResponse = {
   | { mode: 'editor' }
   | {
       mode: 'viewer';
+      contentType: 'image';
       imageData: string;
+      likes: number;
+      dislikes: number;
+      userVote: 'like' | 'dislike' | null;
+    }
+  | {
+      mode: 'viewer';
+      contentType: 'video';
+      videoData: string;
+      title: string;
       likes: number;
       dislikes: number;
       userVote: 'like' | 'dislike' | null;
@@ -20,6 +30,16 @@ export type PostMemeRequest = {
 
 export type PostMemeResponse = {
   type: 'post-meme';
+  postUrl: string;
+};
+
+export type PostVideoRequest = {
+  videoData: string;
+  title: string;
+};
+
+export type PostVideoResponse = {
+  type: 'post-video';
   postUrl: string;
 };
 

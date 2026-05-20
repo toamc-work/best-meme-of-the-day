@@ -4,10 +4,14 @@ import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MemeEditor } from './components/meme/MemeEditor';
 import { MemeViewer } from './components/meme/MemeViewer';
+import { VideoEditor } from './components/meme/VideoEditor';
+import { VideoViewer } from './components/meme/VideoViewer';
+import { ContentTypePicker } from './components/meme/ContentTypePicker';
 import type { InitResponse } from '../shared/api';
 
 export const App = () => {
   const [initData, setInitData] = useState<InitResponse | null>(null);
+  const [contentType, setContentType] = useState<'image' | 'video' | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -27,6 +31,16 @@ export const App = () => {
   }
 
   if (initData.mode === 'viewer') {
+    if (initData.contentType === 'video') {
+      return (
+        <VideoViewer
+          videoData={initData.videoData}
+          initialLikes={initData.likes}
+          initialDislikes={initData.dislikes}
+          initialUserVote={initData.userVote}
+        />
+      );
+    }
     return (
       <MemeViewer
         imageData={initData.imageData}
@@ -37,6 +51,8 @@ export const App = () => {
     );
   }
 
+  if (!contentType) return <ContentTypePicker onSelect={setContentType} />;
+  if (contentType === 'video') return <VideoEditor />;
   return <MemeEditor />;
 };
 
