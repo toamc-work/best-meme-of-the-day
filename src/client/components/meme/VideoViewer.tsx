@@ -88,10 +88,10 @@ export const VideoViewer = ({
         className="w-full h-full object-contain"
       />
 
-      {/* bottom gradient + controls */}
-      <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+      {/* top gradient + controls — keeps the bottom area free for native video controls */}
+      <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
 
-      <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
+      <div className="absolute top-3 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
         <div className="flex items-center gap-4">
           <button
             className="flex items-center gap-1.5 text-white"

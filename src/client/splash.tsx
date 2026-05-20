@@ -3,7 +3,7 @@ import './index.css';
 import { requestExpandedMode } from '@devvit/web/client';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Heart, ThumbsDown, Play, Flame } from 'lucide-react';
+import { Heart, ThumbsDown, Flame } from 'lucide-react';
 import { MemeViewer } from './components/meme/MemeViewer';
 import type { InitResponse } from '../shared/api';
 
@@ -77,15 +77,9 @@ export const Splash = () => {
             />
           </div>
 
-          {/* subtle video badge */}
-          <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded-full pointer-events-none">
-            <Play className="w-3 h-3 fill-white" />
-            Video
-          </div>
-
-          {/* bottom gradient + controls — identical to MemeViewer */}
-          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
-          <div className="absolute bottom-4 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
+          {/* top gradient + controls */}
+          <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+          <div className="absolute top-3 left-0 right-0 flex items-center justify-between px-5 pointer-events-auto">
             <div className="flex items-center gap-4">
               <button className="flex items-center gap-1.5 text-white" onClick={() => void handleVote('like')} aria-label="Like">
                 <Heart className="w-6 h-6 transition-colors" style={{ color: userVote === 'like' ? '#d93900' : 'white', fill: userVote === 'like' ? '#d93900' : 'none' }} />
