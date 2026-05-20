@@ -4,11 +4,11 @@ type Props = {
 
 export const MemeViewer = ({ imageData }: Props) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 p-4">
+    <div className="w-full h-screen overflow-hidden bg-[#0e0e0e] flex items-center justify-center">
       <img
         src={imageData}
         alt="Meme"
-        className="w-full max-w-lg rounded-lg shadow-lg"
+        className="w-full h-full object-contain"
       />
     </div>
   );

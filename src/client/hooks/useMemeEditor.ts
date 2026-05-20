@@ -15,7 +15,7 @@ type MemeEditorState = {
   image: File | null;
   imageUrl: string | null;
   layers: TextLayerData[];
-  selectedLayerId: string | null;
+  editingLayerId: string | null;
   submitting: boolean;
 };
 
@@ -24,7 +24,7 @@ export const useMemeEditor = () => {
     image: null,
     imageUrl: null,
     layers: [],
-    selectedLayerId: null,
+    editingLayerId: null,
     submitting: false,
   });
 
@@ -48,19 +48,26 @@ export const useMemeEditor = () => {
     });
   }, []);
 
-  const addLayer = useCallback(() => {
+  const clearImage = useCallback(() => {
+    setState((prev) => {
+      if (prev.imageUrl) URL.revokeObjectURL(prev.imageUrl);
+      return { image: null, imageUrl: null, layers: [], editingLayerId: null, submitting: false };
+    });
+  }, []);
+
+  const addLayer = useCallback((x: number, y: number) => {
     const newLayer: TextLayerData = {
       id: crypto.randomUUID(),
       text: 'Text',
-      x: 50,
-      y: 50,
-      fontSize: 24,
+      x,
+      y,
+      fontSize: 32,
       locked: false,
     };
     setState((prev) => ({
       ...prev,
       layers: [...prev.layers, newLayer],
-      selectedLayerId: newLayer.id,
+      editingLayerId: newLayer.id,
     }));
   }, []);
 
@@ -75,7 +82,7 @@ export const useMemeEditor = () => {
     setState((prev) => ({
       ...prev,
       layers: prev.layers.filter((l) => l.id !== id),
-      selectedLayerId: prev.selectedLayerId === id ? null : prev.selectedLayerId,
+      editingLayerId: prev.editingLayerId === id ? null : prev.editingLayerId,
     }));
   }, []);
 
@@ -85,15 +92,15 @@ export const useMemeEditor = () => {
       layers: prev.layers.map((l) =>
         l.id === id ? { ...l, locked: !l.locked } : l
       ),
-      selectedLayerId:
-        prev.selectedLayerId === id && !prev.layers.find((l) => l.id === id)?.locked
-          ? null
-          : prev.selectedLayerId,
     }));
   }, []);
 
-  const selectLayer = useCallback((id: string | null) => {
-    setState((prev) => ({ ...prev, selectedLayerId: id }));
+  const startEdit = useCallback((id: string) => {
+    setState((prev) => ({ ...prev, editingLayerId: id }));
+  }, []);
+
+  const finishEdit = useCallback(() => {
+    setState((prev) => ({ ...prev, editingLayerId: null }));
   }, []);
 
   const exportAndSubmit = useCallback(
@@ -160,11 +167,13 @@ export const useMemeEditor = () => {
   return {
     ...state,
     setImage,
+    clearImage,
     addLayer,
     updateLayer,
     deleteLayer,
     toggleLock,
-    selectLayer,
+    startEdit,
+    finishEdit,
     exportAndSubmit,
   } as const;
 };
