@@ -10,7 +10,7 @@ export const App = () => {
   const [initData, setInitData] = useState<InitResponse | null>(null);
 
   useEffect(() => {
-    const init = async () => {
+    void (async () => {
       try {
         const res = await fetch('/api/init');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -19,12 +19,24 @@ export const App = () => {
       } catch (err) {
         console.error('Failed to init', err);
       }
-    };
-    void init();
+    })();
   }, []);
 
-  if (!initData) return null;
-  if (initData.mode === 'viewer') return <MemeViewer imageData={initData.imageData} />;
+  if (!initData) {
+    return <div className="w-full h-screen bg-[#0e0e0e]" />;
+  }
+
+  if (initData.mode === 'viewer') {
+    return (
+      <MemeViewer
+        imageData={initData.imageData}
+        initialLikes={initData.likes}
+        initialDislikes={initData.dislikes}
+        initialUserVote={initData.userVote}
+      />
+    );
+  }
+
   return <MemeEditor />;
 };
 

@@ -3,10 +3,12 @@ import './index.css';
 import { requestExpandedMode } from '@devvit/web/client';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { MemeViewer } from './components/meme/MemeViewer';
 import type { InitResponse } from '../shared/api';
 
 export const Splash = () => {
   const [initData, setInitData] = useState<InitResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void (async () => {
@@ -15,19 +17,24 @@ export const Splash = () => {
         if (res.ok) setInitData(await (res.json() as Promise<InitResponse>));
       } catch {
         // fall through to editor CTA
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
 
+  if (loading) {
+    return <div className="w-full h-screen bg-[#0e0e0e]" />;
+  }
+
   if (initData?.mode === 'viewer') {
     return (
-      <div className="w-full h-screen overflow-hidden bg-[#0e0e0e] flex items-center justify-center">
-        <img
-          src={initData.imageData}
-          alt="Meme"
-          className="w-full h-full object-contain"
-        />
-      </div>
+      <MemeViewer
+        imageData={initData.imageData}
+        initialLikes={initData.likes}
+        initialDislikes={initData.dislikes}
+        initialUserVote={initData.userVote}
+      />
     );
   }
 
